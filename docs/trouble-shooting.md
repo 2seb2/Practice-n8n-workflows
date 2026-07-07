@@ -290,9 +290,7 @@ Request failed with status code 429
 - 순간 요청량 자체를 축소해 RPD·RPM 모두 여유 확보
 
 **2. 예외 상황 처리**
-- Message a model 노드 Settings에서 Retry On Fail 활성화 (Max Tries 3, Wait Between Tries 60000ms)
-  - RPM(분당 한도)에 걸린 일시적 실패는 1분 대기로 복구 가능
-  - RPD는 재시도로 복구 불가하므로, 이 설정은 RPM 대응이 목적
+- 재시도(Retry On Fail)는 활성화하지 않음. 이유: n8n Retry의 Wait Between Tries 상한이 5초라 Google이 안내한 재시도 지연(약 10초)도 완충 불가하며, RPD 초과는 재시도로 복구되지 않음.
 - On Error: Stop Workflow → **Continue on Fail**로 변경
   - 개별 뉴스 실패가 전체 배치를 멈추지 않도록 처리
 

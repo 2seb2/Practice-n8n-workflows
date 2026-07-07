@@ -1,0 +1,209 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "custom",
+              "cronExpression": "0 9,18 * * *"
+            }
+          ]
+        },
+        "feedUrl": "https://news.google.com/rss/search?q=AI&hl=ko&gl=KR&ceid=KR:ko"
+      },
+      "type": "n8n-nodes-base.rssFeedReadTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "f83d5454-0a35-43a4-b109-d1b7b264443b",
+      "name": "RSS Feed Trigger"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=당신은 AI 자동화 컨설턴트입니다.\n\n다음 뉴스를 읽고 아래 형식으로만 답변하세요.\n인사말, 추가 설명, 구분선은 작성하지 마세요.\n\n제목:\n{{ $json.title }}\n\n내용:\n{{ $json.contentSnippet }}\n\n## 뉴스 요약\n- \n- \n\n## 업무 자동화 아이디어\n1. 제목:\n   설명:\n2. 제목:\n   설명:\n3. 제목:\n   설명:"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "ff322f08-f6e9-4c14-8be8-bf9a42525d79",
+      "name": "Message a model",
+      "retryOnFail": false,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "eb632ZU6vseaRZoA",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "databaseId": {
+          "__rl": true,
+          "value": "3961dbaf-a868-805a-bd67-dd33b3f4eae5",
+          "mode": "list",
+          "cachedResultName": "AI News : Idea",
+          "cachedResultUrl": "https://app.notion.com/p/3961dbafa868805abd67dd33b3f4eae5"
+        },
+        "title": "={{$node[\"RSS Feed Trigger\"].json[\"title\"]}}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Summary|rich_text",
+              "textContent": "={{$node[\"Message a model\"].json[\"content\"][\"parts\"][0][\"text\"]}}"
+            },
+            {
+              "key": "Link|url",
+              "urlValue": "={{$node[\"RSS Feed Trigger\"].json[\"link\"]}}"
+            },
+            {
+              "key": "Published|date",
+              "date": "={{$node[\"RSS Feed Trigger\"].json[\"isoDate\"]}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        976,
+        0
+      ],
+      "id": "4c6e036a-f043-4119-89a2-c5fac09da850",
+      "name": "Create a database page",
+      "credentials": {
+        "notionApi": {
+          "id": "82eBgNFIeYX2ElgA",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": {
+          "__rl": true,
+          "value": "3961dbaf-a868-805a-bd67-dd33b3f4eae5",
+          "mode": "list",
+          "cachedResultName": "AI News : Idea",
+          "cachedResultUrl": "https://app.notion.com/p/3961dbafa868805abd67dd33b3f4eae5"
+        },
+        "returnAll": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "e966e8ec-d50e-4289-8d64-366e548e79ba",
+      "name": "Get many database pages",
+      "credentials": {
+        "notionApi": {
+          "id": "82eBgNFIeYX2ElgA",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rssTitle = $('RSS Feed Trigger').first().json.title;\n\nconst exists = items.some((item) => {\n  const notionTitle = item.json.name;\n\n  return notionTitle === rssTitle;\n});\n\nif (exists) {\n  return [];\n}\n\nreturn [\n  {\n    json: {\n      title: rssTitle,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "6b038ea6-cbff-4c57-9e6c-5ccb2ae0ed92",
+      "name": "Code in JavaScript"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "RSS Feed Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get many database pages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Create a database page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many database pages": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "d3e9d9e3-4a30-4bf9-8a6d-dc9a57780ffb",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e0e201c9a899e13bb55e07b03aa02cf5c545e50cd4b0d47538aa060a4978773a"
+  },
+  "nodeGroups": [],
+  "id": "RzHJJILSh3HiH0AD",
+  "tags": []
+}
